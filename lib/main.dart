@@ -7,6 +7,8 @@ import 'package:search_engine/Screens/HomeScreen.dart';
 import 'package:search_engine/Screens/ResultsScreen.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
 
+import 'Screens/WebViewScreen.dart';
+
 void main() {
   runApp(MyApp());
 }
@@ -37,6 +39,7 @@ class MyApp extends StatelessWidget {
         routes: {
           HomeScreen.routeName: (ctx) => HomeScreen(),
           ResultsScreen.routeName: (ctx) => ResultsScreen(),
+          WebViewScreen.routeName: (ctx) => WebViewScreen(),
         },
       ),
     );
