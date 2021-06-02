@@ -1,6 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 import 'package:search_engine/Constants/Colors.dart';
+import 'package:search_engine/Models/WebsiteModel.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
 import 'package:search_engine/Widgets/ResultWidget.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
@@ -13,6 +15,11 @@ class ResultsScreen extends StatefulWidget {
 }
 
 class _ResultsScreenState extends State<ResultsScreen> {
+  static const _pageSize = 3;
+
+  final PagingController<int, Website> _pagingController =
+      PagingController(firstPageKey: 0);
+
   //AuthenticationViewModel auth;
   ResultsViewModel viewModel;
   bool isSpeechAvailable = false;
@@ -24,22 +31,53 @@ class _ResultsScreenState extends State<ResultsScreen> {
   void initState() {
     viewModel = Provider.of<ResultsViewModel>(context, listen: false);
 
-    Future.microtask(() async {
-      print('INSIDE');
+    // Future.microtask(() async {
+    //   print('INSIDE');
 
-      if (!isSpeechAvailable) {
-        isSpeechAvailable = await speech.initialize(
-          onStatus: (status) {
-            //print(status);
-          },
-          onError: (error) {
-            print(error);
-          },
-        );
-      }
+    //   try {
+    //     if (!isSpeechAvailable) {
+    //       isSpeechAvailable = await speech.initialize(
+    //         onStatus: (status) {
+    //           //print(status);
+    //         },
+    //         onError: (error) {
+    //           print(error);
+    //         },
+    //       );
+    //     }
+    //   } catch (e) {
+    //     print(e);
+    //   }
+    // });
+    _fetchPage(0);
+    _pagingController.addPageRequestListener((pageKey) {
+      _fetchPage(pageKey);
     });
 
     super.initState();
+  }
+
+  Future<void> _fetchPage(int pageKey) async {
+    try {
+      if (pageKey == null) return;
+      final newItems =
+          await viewModel.searchWord("barcelona", pageKey, _pageSize);
+      final isLastPage = newItems.length == 0;
+      if (isLastPage) {
+        _pagingController.appendLastPage(newItems);
+      } else {
+        final nextPageKey = pageKey + 1;
+        _pagingController.appendPage(newItems, nextPageKey);
+      }
+    } catch (error) {
+      _pagingController.error = error;
+    }
+  }
+
+  @override
+  void dispose() {
+    _pagingController.dispose();
+    super.dispose();
   }
 
   @override
@@ -220,10 +258,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                     side: BorderSide(
                                         color: ConstantColors.blue)))),
                         onPressed: () async {
-                          await viewModel
-                              .searchWord(viewModel.searchController.text);
+                          // await viewModel
+                          //     .searchWord(viewModel.searchController.text);
 
-                          print("entra");
+                          // print("entra");
                         },
                         child: Text(
                           'Search',
@@ -258,14 +296,23 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             ),
                           ),
                         )
-                      : ListView.builder(
-                          padding: EdgeInsets.zero,
+                      : PagedListView<int, Website>(
                           shrinkWrap: true,
-                          itemCount: viewModel.websites.length,
-                          itemBuilder: (_, index) {
-                            return ResultWidget(
-                                url: viewModel.websites[index].url);
-                          }),
+                          pagingController: _pagingController,
+                          builderDelegate: PagedChildBuilderDelegate<Website>(
+                            itemBuilder: (context, item, index) => ResultWidget(
+                              url: item.url,
+                            ),
+                          ),
+                        ),
+                  // : ListView.builder(
+                  //     padding: EdgeInsets.zero,
+                  //     shrinkWrap: true,
+                  //     itemCount: viewModel.websites.length,
+                  //     itemBuilder: (_, index) {
+                  //       return ResultWidget(
+                  //           url: viewModel.websites[index].url);
+                  //     }),
                 ),
                 // child: Container(
                 //   color: Colors.grey[200],

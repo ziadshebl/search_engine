@@ -28,6 +28,7 @@ dependencies:
   metadata_fetch: ^0.3.4
   http: ^0.12.0
   webview_flutter: ^2.0.8
+  infinite_scroll_pagination: ^3.0.1+1
 
 
   # The following adds the Cupertino Icons font to your application.

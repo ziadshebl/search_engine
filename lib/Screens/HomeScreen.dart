@@ -241,10 +241,10 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(10.0),
                               side: BorderSide(color: ConstantColors.blue)))),
                   onPressed: () async {
-                    await viewModel.searchWord(viewModel.searchController.text);
-                    Navigator.pushReplacementNamed(
-                        context, ResultsScreen.routeName);
-                    print("entra");
+                    // await viewModel.searchWord(viewModel.searchController.text);
+                    // Navigator.pushReplacementNamed(
+                    //     context, ResultsScreen.routeName);
+                    // print("entra");
                   },
                   child: Text(
                     'Search',

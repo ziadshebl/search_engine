@@ -8,6 +8,7 @@ import 'package:search_engine/Screens/ResultsScreen.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
 
 import 'Screens/WebViewScreen.dart';
+import 'Screens/test.dart';
 
 void main() {
   runApp(MyApp());
@@ -35,7 +36,7 @@ class MyApp extends StatelessWidget {
             accentColor: Colors.white,
             primaryColor: ConstantColors.blue,
             fontFamily: 'NotoSansJP'),
-        home: HomeScreen(),
+        home: ResultsScreen(),
         routes: {
           HomeScreen.routeName: (ctx) => HomeScreen(),
           ResultsScreen.routeName: (ctx) => ResultsScreen(),

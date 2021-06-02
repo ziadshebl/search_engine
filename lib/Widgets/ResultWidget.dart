@@ -17,12 +17,12 @@ class _ResultWidgetState extends State<ResultWidget> {
   bool isLoaded = false;
   @override
   void initState() {
-    Future.microtask(() async {
-      metadata = await extract(widget.url);
-      setState(() {
-        isLoaded = true;
-      });
-    });
+    // Future.microtask(() async {
+    //   metadata = await extract(widget.url);
+    //   setState(() {
+    //     isLoaded = true;
+    //   });
+    // });
     super.initState();
   }
 
@@ -30,7 +30,9 @@ class _ResultWidgetState extends State<ResultWidget> {
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
     return !isLoaded
-        ? Container()
+        ? Container(
+            child: Text(widget.url),
+          )
         : InkWell(
             onTap: () => Navigator.push(
                 context,
