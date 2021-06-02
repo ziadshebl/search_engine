@@ -320,6 +320,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 ),
                 Container(
                   height: deviceSize.height - 205,
+                  color: Colors.grey[200],
                   child: PagedListView<int, Website>(
                     padding: EdgeInsets.zero,
                     shrinkWrap: true,
