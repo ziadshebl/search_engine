@@ -7,7 +7,6 @@ import 'package:search_engine/Screens/HomeScreen.dart';
 import 'package:search_engine/Screens/ResultsScreen.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
 import 'package:search_engine/ViewModels/SuggestionsViewModel.dart';
-
 import 'Screens/WebViewScreen.dart';
 
 void main() {

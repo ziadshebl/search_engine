@@ -30,7 +30,9 @@ class _ResultWidgetState extends State<ResultWidget> {
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
     return !isLoaded
-        ? Container()
+        ? Container(
+            child: Text(widget.url),
+          )
         : InkWell(
             onTap: () => Navigator.push(
                 context,
