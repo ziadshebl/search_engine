@@ -3,18 +3,16 @@ import 'package:flutter/material.dart';
 import 'package:search_engine/Constants/Status.dart';
 import 'package:search_engine/Models/WebsiteModel.dart';
 import 'package:search_engine/Services/WebServices.dart';
+import 'package:search_engine/ViewModels/SuggestionsViewModel.dart';
 
 class ResultsViewModel with ChangeNotifier {
   Status status = Status.success;
   List<Website> websites = [];
-  TextEditingController _searchController = TextEditingController();
-
-  TextEditingController get searchController {
-    return _searchController;
-  }
+  String word = '';
 
   Future<bool> searchWord(String word) async {
     try {
+      this.word = word;
       websites.clear();
       status = Status.loading;
       notifyListeners();

@@ -20,4 +20,21 @@ class WebServices {
       //throw HTTPException(e).toString();
     }
   }
+
+  Future<List> getSuggestions(String word) async {
+    try {
+      final response = await http.get(
+        EndPoints.baseUrl + '/getSuggestions/' + word,
+      );
+      print(response.body);
+      // if (response.statusCode != 201) {
+      //   throw HTTPException(response.data['error']).toString();
+      // }
+
+      return jsonDecode(response.body) as List;
+    } catch (e) {
+      print(e);
+      //throw HTTPException(e).toString();
+    }
+  }
 }

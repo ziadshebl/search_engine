@@ -6,6 +6,7 @@ import 'package:search_engine/Constants/Colors.dart';
 import 'package:search_engine/Screens/HomeScreen.dart';
 import 'package:search_engine/Screens/ResultsScreen.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
+import 'package:search_engine/ViewModels/SuggestionsViewModel.dart';
 
 import 'Screens/WebViewScreen.dart';
 
@@ -21,12 +22,9 @@ class MyApp extends StatelessWidget {
         ChangeNotifierProvider.value(
           value: ResultsViewModel(),
         ),
-        // ChangeNotifierProvider.value(
-        //   value: AuthenticationViewModel(),
-        // ),
-        // ChangeNotifierProvider.value(
-        //   value: ChannelsViewModel(),
-        // ),
+        ChangeNotifierProvider.value(
+          value: SuggestionsViewModel(),
+        ),
       ],
       child: MaterialApp(
         title: 'Doodle',

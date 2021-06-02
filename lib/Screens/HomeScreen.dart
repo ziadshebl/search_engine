@@ -1,10 +1,12 @@
 import 'dart:convert';
 
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
 import 'package:flutter/material.dart';
 import 'package:search_engine/Constants/Colors.dart';
 import 'package:search_engine/Screens/ResultsScreen.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
+import 'package:search_engine/ViewModels/SuggestionsViewModel.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
 //import 'package:raz3_ordering_form/Constants/Colors.dart';
@@ -16,28 +18,27 @@ class HomeScreen extends StatefulWidget {
 }
 
 class _HomeScreenState extends State<HomeScreen> {
-  ResultsViewModel viewModel;
-
+  ResultsViewModel resultsViewModel;
+  SuggestionsViewModel suggestionsViewModel;
   bool isSpeechAvailable = false;
   bool isRecognitionOn = false;
   stt.SpeechToText speech = stt.SpeechToText();
-
+  TextEditingController searchController = TextEditingController();
   SpeechRecognitionResult results;
 
   @override
   void dispose() {
-    viewModel.removeListener(() {});
+    resultsViewModel.removeListener(() {});
     super.dispose();
   }
 
   @override
   void initState() {
-    viewModel = Provider.of<ResultsViewModel>(context, listen: false);
+    resultsViewModel = Provider.of<ResultsViewModel>(context, listen: false);
+    suggestionsViewModel =
+        Provider.of<SuggestionsViewModel>(context, listen: false);
     Future.microtask(() async {
       print('INSIDE');
-      // viewModel.searchController.addListener(() {
-      //   setState(() {});
-      // });
       if (!isSpeechAvailable) {
         isSpeechAvailable = await speech.initialize(
           onStatus: (status) {
@@ -56,7 +57,6 @@ class _HomeScreenState extends State<HomeScreen> {
   @override
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
-
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
@@ -163,36 +163,59 @@ class _HomeScreenState extends State<HomeScreen> {
                     width: deviceSize.width * 0.6 < 500
                         ? deviceSize.width * 0.6
                         : 500,
-                    child: TextField(
-                      controller: viewModel.searchController,
-                      style: TextStyle(fontSize: 20),
-                      decoration: new InputDecoration(
-                          contentPadding: EdgeInsets.symmetric(vertical: 0.0),
-                          border: new OutlineInputBorder(
-                            borderRadius: const BorderRadius.all(
-                              const Radius.circular(30.0),
+                    child: TypeAheadField(
+                      loadingBuilder: (BuildContext context) => Container(
+                          height: 10,
+                          width: 10,
+                          child: CircularProgressIndicator()),
+                      textFieldConfiguration: TextFieldConfiguration(
+                        controller: searchController,
+                        style: TextStyle(fontSize: 20),
+                        decoration: new InputDecoration(
+                            contentPadding: EdgeInsets.symmetric(vertical: 0.0),
+                            border: new OutlineInputBorder(
+                              borderRadius: const BorderRadius.all(
+                                const Radius.circular(30.0),
+                              ),
                             ),
-                          ),
-                          filled: true,
-                          prefixIcon: Icon(Icons.search),
-                          suffix: viewModel.searchController.text.isNotEmpty
-                              ? IconButton(
-                                  alignment: Alignment.topCenter,
-                                  iconSize: 20,
-                                  icon: Icon(
-                                    Icons.cancel,
-                                    color: Colors.grey[500],
-                                  ),
-                                  onPressed: () {
-                                    setState(() {
-                                      viewModel.searchController.clear();
-                                    });
-                                  },
-                                )
-                              : null,
-                          hintStyle: new TextStyle(color: Colors.grey[800]),
-                          hintText: "",
-                          fillColor: Colors.white70),
+                            filled: true,
+                            prefixIcon: Icon(Icons.search),
+                            suffix: searchController.text.isNotEmpty
+                                ? IconButton(
+                                    alignment: Alignment.topCenter,
+                                    iconSize: 20,
+                                    icon: Icon(
+                                      Icons.cancel,
+                                      color: Colors.grey[500],
+                                    ),
+                                    onPressed: () {
+                                      setState(() {
+                                        searchController.clear();
+                                      });
+                                    },
+                                  )
+                                : null,
+                            hintStyle: new TextStyle(color: Colors.grey[800]),
+                            hintText: "",
+                            fillColor: Colors.white70),
+                      ),
+                      suggestionsCallback: (pattern) async {
+                        await suggestionsViewModel.getSuggesitons(pattern);
+                        return suggestionsViewModel.suggestions;
+                      },
+                      itemBuilder: (context, suggestion) {
+                        return ListTile(
+                          title: Text(suggestion),
+                          //subtitle: Text('\$${suggestion['price']}'),
+                        );
+                      },
+                      onSuggestionSelected: (suggestion) async {
+                        searchController.text = suggestion;
+                        await resultsViewModel
+                            .searchWord(searchController.text);
+                        Navigator.pushReplacementNamed(
+                            context, ResultsScreen.routeName);
+                      },
                     ),
                   ),
                   Container(
@@ -205,20 +228,24 @@ class _HomeScreenState extends State<HomeScreen> {
                         if (isRecognitionOn) {
                           setState(() {
                             if (results != null) {
-                              viewModel.searchController.text =
-                                  results.recognizedWords;
+                              searchController.text = results.recognizedWords;
                               isRecognitionOn = false;
+                              print('SET1');
                             }
+                            isRecognitionOn = false;
                             speech.stop();
                           });
                         } else {
                           setState(() {
                             isRecognitionOn = true;
+
+                            print('SET2');
                           });
 
                           speech.listen(onResult: (result) {
                             setState(() {
                               results = result;
+                              print('SET3');
                               print(result);
                             });
                           });
@@ -241,10 +268,9 @@ class _HomeScreenState extends State<HomeScreen> {
                               borderRadius: BorderRadius.circular(10.0),
                               side: BorderSide(color: ConstantColors.blue)))),
                   onPressed: () async {
-                    await viewModel.searchWord(viewModel.searchController.text);
+                    await resultsViewModel.searchWord(searchController.text);
                     Navigator.pushReplacementNamed(
                         context, ResultsScreen.routeName);
-                    print("entra");
                   },
                   child: Text(
                     'Search',

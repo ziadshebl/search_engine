@@ -1,7 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:provider/provider.dart';
 import 'package:search_engine/Constants/Colors.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
+import 'package:search_engine/ViewModels/SuggestionsViewModel.dart';
 import 'package:search_engine/Widgets/ResultWidget.dart';
 import 'package:speech_to_text/speech_recognition_result.dart';
 import 'package:speech_to_text/speech_to_text.dart' as stt;
@@ -13,17 +15,22 @@ class ResultsScreen extends StatefulWidget {
 }
 
 class _ResultsScreenState extends State<ResultsScreen> {
-  //AuthenticationViewModel auth;
-  ResultsViewModel viewModel;
+  ResultsViewModel resultsViewModel;
+  SuggestionsViewModel suggestionsViewModel;
   bool isSpeechAvailable = false;
   bool isRecognitionOn = false;
+  int isListening = 0;
   stt.SpeechToText speech = stt.SpeechToText();
-
+  TextEditingController searchController = TextEditingController();
   SpeechRecognitionResult results;
+
   @override
   void initState() {
-    viewModel = Provider.of<ResultsViewModel>(context, listen: false);
+    resultsViewModel = Provider.of<ResultsViewModel>(context, listen: false);
+    suggestionsViewModel =
+        Provider.of<SuggestionsViewModel>(context, listen: false);
 
+    searchController.text = resultsViewModel.word;
     Future.microtask(() async {
       print('INSIDE');
 
@@ -46,7 +53,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
 
-    viewModel = Provider.of<ResultsViewModel>(context, listen: true);
+    resultsViewModel = Provider.of<ResultsViewModel>(context, listen: true);
     return Scaffold(
       backgroundColor: Colors.white,
       body: SingleChildScrollView(
@@ -138,44 +145,66 @@ class _ResultsScreenState extends State<ResultsScreen> {
                   mainAxisAlignment: MainAxisAlignment.center,
                   children: [
                     Container(
-                      alignment: Alignment.centerLeft,
-                      width: deviceSize.width * 0.6 < 300
+                      width: deviceSize.width * 0.6 < 500
                           ? deviceSize.width * 0.6
-                          : 300,
-                      child: TextField(
-                        controller: viewModel.searchController,
-                        style: TextStyle(fontSize: 20),
-                        decoration: new InputDecoration(
-                            contentPadding: EdgeInsets.symmetric(vertical: 0.0),
-                            border: new OutlineInputBorder(
-                              borderRadius: const BorderRadius.all(
-                                const Radius.circular(30.0),
+                          : 500,
+                      child: TypeAheadField(
+                        loadingBuilder: (BuildContext context) => Container(
+                            height: 10,
+                            width: 10,
+                            child: CircularProgressIndicator()),
+                        textFieldConfiguration: TextFieldConfiguration(
+                          controller: searchController,
+                          style: TextStyle(fontSize: 20),
+                          decoration: new InputDecoration(
+                              contentPadding:
+                                  EdgeInsets.symmetric(vertical: 0.0),
+                              border: new OutlineInputBorder(
+                                borderRadius: const BorderRadius.all(
+                                  const Radius.circular(30.0),
+                                ),
                               ),
-                            ),
-                            filled: true,
-                            prefixIcon: Icon(Icons.search),
-                            suffix: viewModel.searchController.text.isNotEmpty
-                                ? IconButton(
-                                    alignment: Alignment.topCenter,
-                                    iconSize: 20,
-                                    icon: Icon(
-                                      Icons.cancel,
-                                      color: Colors.grey[500],
-                                    ),
-                                    onPressed: () {
-                                      setState(() {
-                                        viewModel.searchController.clear();
-                                      });
-                                    },
-                                  )
-                                : null,
-                            hintStyle: new TextStyle(color: Colors.grey[800]),
-                            hintText: "",
-                            fillColor: Colors.white70),
+                              filled: true,
+                              prefixIcon: Icon(Icons.search),
+                              suffix: searchController.text.isNotEmpty
+                                  ? IconButton(
+                                      alignment: Alignment.topCenter,
+                                      iconSize: 20,
+                                      icon: Icon(
+                                        Icons.cancel,
+                                        color: Colors.grey[500],
+                                      ),
+                                      onPressed: () {
+                                        setState(() {
+                                          searchController.clear();
+                                        });
+                                      },
+                                    )
+                                  : null,
+                              hintStyle: new TextStyle(color: Colors.grey[800]),
+                              hintText: "",
+                              fillColor: Colors.white70),
+                        ),
+                        suggestionsCallback: (pattern) async {
+                          await suggestionsViewModel.getSuggesitons(pattern);
+                          return suggestionsViewModel.suggestions;
+                        },
+                        itemBuilder: (context, suggestion) {
+                          return ListTile(
+                            title: Text(suggestion),
+                            //subtitle: Text('\$${suggestion['price']}'),
+                          );
+                        },
+                        onSuggestionSelected: (suggestion) async {
+                          searchController.text = suggestion;
+                          await resultsViewModel
+                              .searchWord(searchController.text);
+                          Navigator.pushReplacementNamed(
+                              context, ResultsScreen.routeName);
+                        },
                       ),
                     ),
                     Container(
-                      padding: EdgeInsets.fromLTRB(0, 0, 0, 0),
                       child: IconButton(
                         icon: Icon(isRecognitionOn
                             ? Icons.settings_voice_rounded
@@ -185,19 +214,24 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           if (isRecognitionOn) {
                             setState(() {
                               if (results != null) {
-                                viewModel.searchController.text =
-                                    results.recognizedWords;
+                                searchController.text = results.recognizedWords;
                                 isRecognitionOn = false;
+                                print('SET1');
                               }
+                              isRecognitionOn = false;
+                              speech.stop();
                             });
                           } else {
                             setState(() {
                               isRecognitionOn = true;
+
+                              print('SET2');
                             });
 
                             speech.listen(onResult: (result) {
                               setState(() {
                                 results = result;
+                                print('SET3');
                                 print(result);
                               });
                             });
@@ -220,8 +254,8 @@ class _ResultsScreenState extends State<ResultsScreen> {
                                     side: BorderSide(
                                         color: ConstantColors.blue)))),
                         onPressed: () async {
-                          await viewModel
-                              .searchWord(viewModel.searchController.text);
+                          await resultsViewModel
+                              .searchWord(searchController.text);
 
                           print("entra");
                         },
@@ -238,17 +272,17 @@ class _ResultsScreenState extends State<ResultsScreen> {
                 physics: ClampingScrollPhysics(),
                 child: Container(
                   padding: EdgeInsets.fromLTRB(0, 0, 0, 0),
-                  color: viewModel.websites.isEmpty
+                  color: resultsViewModel.websites.isEmpty
                       ? Colors.white
                       : Colors.grey[200],
-                  child: viewModel.websites.isEmpty
+                  child: resultsViewModel.websites.isEmpty
                       ? Container(
                           margin: EdgeInsets.fromLTRB(
                               30, deviceSize.height * 0.25, 30, 0),
                           child: FittedBox(
                             child: Text(
                               'No Results Found for "' +
-                                  viewModel.searchController.text +
+                                  searchController.text +
                                   '"',
                               maxLines: 1,
                               style: TextStyle(
@@ -261,10 +295,10 @@ class _ResultsScreenState extends State<ResultsScreen> {
                       : ListView.builder(
                           padding: EdgeInsets.zero,
                           shrinkWrap: true,
-                          itemCount: viewModel.websites.length,
+                          itemCount: resultsViewModel.websites.length,
                           itemBuilder: (_, index) {
                             return ResultWidget(
-                                url: viewModel.websites[index].url);
+                                url: resultsViewModel.websites[index].url);
                           }),
                 ),
                 // child: Container(
