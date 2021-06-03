@@ -1,12 +1,18 @@
+import 'dart:convert';
+
 import 'package:flutter/material.dart';
 import 'package:metadata_fetch/metadata_fetch.dart';
 import 'package:search_engine/Constants/Colors.dart';
 import 'package:search_engine/Screens/WebViewScreen.dart';
+import 'package:html/parser.dart' show parse;
+import 'package:http/http.dart' as http;
+import 'package:html/dom.dart' hide Text;
 
 class ResultWidget extends StatefulWidget {
   final String url;
+  final String word;
 
-  const ResultWidget({Key key, this.url}) : super(key: key);
+  const ResultWidget({Key key, this.url, this.word}) : super(key: key);
 
   @override
   _ResultWidgetState createState() => _ResultWidgetState();
@@ -15,10 +21,30 @@ class ResultWidget extends StatefulWidget {
 class _ResultWidgetState extends State<ResultWidget> {
   Metadata metadata;
   bool isLoaded = false;
+  String body;
+  bool found = false;
+
   @override
   void initState() {
     Future.microtask(() async {
       metadata = await extract(widget.url);
+
+      http.Response response = await http.get(widget.url);
+
+      Document document = parse(response.body);
+
+      document.querySelectorAll('p').forEach((value) {
+        if (!found &&
+            value.innerHtml.toLowerCase().contains(widget.word.toLowerCase())) {
+          body = value.innerHtml;
+          found = true;
+        }
+        debugPrint(value.innerHtml);
+      });
+      if (!found) {
+        body = metadata.description;
+      }
+
       setState(() {
         isLoaded = true;
       });
@@ -89,7 +115,7 @@ class _ResultWidgetState extends State<ResultWidget> {
                         ? Container(
                             width: deviceSize.width * 0.9,
                             child: Text(
-                              metadata.description,
+                              body,
                               style:
                                   TextStyle(color: Colors.black, fontSize: 14),
                             ),

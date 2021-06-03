@@ -327,8 +327,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     pagingController: _pagingController,
                     builderDelegate: PagedChildBuilderDelegate<Website>(
                       itemBuilder: (context, item, index) => ResultWidget(
-                        url: item.url,
-                      ),
+                          url: item.url, word: resultsViewModel.word),
                     ),
                   ),
                 ),
