@@ -3,6 +3,7 @@ import 'package:flutter_typeahead/flutter_typeahead.dart';
 import 'package:infinite_scroll_pagination/infinite_scroll_pagination.dart';
 import 'package:provider/provider.dart';
 import 'package:search_engine/Constants/Colors.dart';
+import 'package:search_engine/Constants/Status.dart';
 import 'package:search_engine/Models/WebsiteModel.dart';
 import 'package:search_engine/Screens/HomeScreen.dart';
 import 'package:search_engine/ViewModels/ResultsViewModel.dart';
@@ -25,9 +26,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
   stt.SpeechToText speech = stt.SpeechToText();
   TextEditingController searchController = TextEditingController();
 
-  final PagingController<int, Website> _pagingController =
-      PagingController(firstPageKey: 0);
-  static const _pageSize = 3;
+  // final PagingController<int, Website> _pagingController =
+  //     PagingController(firstPageKey: 0);
+  //static const _pageSize = 3;
   SpeechRecognitionResult results;
   @override
   void initState() {
@@ -37,6 +38,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
     searchController.text = resultsViewModel.word;
     Future.microtask(() async {
       print('INSIDE');
+      resultsViewModel.searchWord(searchController.text, true);
       try {
         if (!isSpeechAvailable) {
           isSpeechAvailable = await speech.initialize(
@@ -53,33 +55,33 @@ class _ResultsScreenState extends State<ResultsScreen> {
       }
     });
 
-    _pagingController.addPageRequestListener((pageKey) {
-      _fetchPage(pageKey);
-    });
+    // _pagingController.addPageRequestListener((pageKey) {
+    //   _fetchPage(pageKey);
+    // });
 
     super.initState();
   }
 
-  Future<void> _fetchPage(int pageKey) async {
-    try {
-      if (pageKey == null) return;
-      final newItems = await resultsViewModel.searchWord(
-          resultsViewModel.word, pageKey, _pageSize);
-      final isLastPage = newItems.length < _pageSize;
-      if (isLastPage) {
-        _pagingController.appendLastPage(newItems);
-      } else {
-        final nextPageKey = pageKey + 1;
-        _pagingController.appendPage(newItems, nextPageKey);
-      }
-    } catch (error) {
-      _pagingController.error = error;
-    }
-  }
+  // Future<void> _fetchPage(int pageKey) async {
+  //   try {
+  //     if (pageKey == null) return;
+  //     final newItems = await resultsViewModel.searchWord(
+  //         resultsViewModel.word, pageKey, _pageSize);
+  //     final isLastPage = newItems.length < _pageSize;
+  //     if (isLastPage) {
+  //       _pagingController.appendLastPage(newItems);
+  //     } else {
+  //       final nextPageKey = pageKey + 1;
+  //       _pagingController.appendPage(newItems, nextPageKey);
+  //     }
+  //   } catch (error) {
+  //     _pagingController.error = error;
+  //   }
+  // }
 
   @override
   void dispose() {
-    _pagingController.dispose();
+    //_pagingController.dispose();
     super.dispose();
   }
 
@@ -250,7 +252,7 @@ class _ResultsScreenState extends State<ResultsScreen> {
                             searchController.text = suggestion;
                             resultsViewModel.word = searchController.text;
                             FocusScope.of(context).unfocus();
-                            _pagingController.refresh();
+                            // _pagingController.refresh();
                           },
                         ),
                       ),
@@ -307,7 +309,9 @@ class _ResultsScreenState extends State<ResultsScreen> {
                           onPressed: () async {
                             resultsViewModel.word = searchController.text;
                             FocusScope.of(context).unfocus();
-                            _pagingController.refresh();
+                            Navigator.pushReplacementNamed(
+                                context, ResultsScreen.routeName);
+                            // _pagingController.refresh();
                           },
                           child: Text(
                             'Search',
@@ -318,19 +322,54 @@ class _ResultsScreenState extends State<ResultsScreen> {
                     ],
                   ),
                 ),
+                // Container(
+                //   height: deviceSize.height - 205,
+                //   color: Colors.grey[200],
+                //   child: PagedListView<int, Website>(
+                //     padding: EdgeInsets.zero,
+                //     shrinkWrap: true,
+                //     addAutomaticKeepAlives: false,
+                //     pagingController: _pagingController,
+                //     builderDelegate: PagedChildBuilderDelegate<Website>(
+                //       itemBuilder: (context, item, index) => ResultWidget(
+                //           url: item.url, word: resultsViewModel.word),
+                //     ),
+                //   ),
+                // ),
                 Container(
-                  height: deviceSize.height - 205,
-                  color: Colors.grey[200],
-                  child: PagedListView<int, Website>(
-                    padding: EdgeInsets.zero,
-                    shrinkWrap: true,
-                    pagingController: _pagingController,
-                    builderDelegate: PagedChildBuilderDelegate<Website>(
-                      itemBuilder: (context, item, index) => ResultWidget(
-                          url: item.url, word: resultsViewModel.word),
-                    ),
-                  ),
-                ),
+                    height: deviceSize.height - 245,
+                    child: NotificationListener(
+                      onNotification: (ScrollNotification notification) {
+                        if (notification.metrics.pixels ==
+                                notification.metrics.maxScrollExtent &&
+                            resultsViewModel.status != Status.loading) {
+                          resultsViewModel.searchWord(
+                              searchController.text, false);
+                        }
+                      },
+                      child: resultsViewModel.websites.isNotEmpty
+                          ? ListView.builder(
+                              padding: EdgeInsets.zero,
+                              itemCount: resultsViewModel.websites.length,
+                              itemBuilder: (_, index) {
+                                return ResultWidget(
+                                  url: resultsViewModel.websites[index].url,
+                                  word: searchController.text,
+                                );
+                              })
+                          : resultsViewModel.status != Status.loading
+                              ? Center(
+                                  child: Text('No Results Found'),
+                                )
+                              : Container(),
+                    )),
+                Container(
+                    height: resultsViewModel.status == Status.loading ? 30 : 0,
+                    width: 30,
+                    child: CircularProgressIndicator(
+                      backgroundColor: ConstantColors.blue,
+                    )),
+
                 Spacer(
                   flex: 2,
                 ),

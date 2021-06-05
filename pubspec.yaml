@@ -30,6 +30,7 @@ dependencies:
   webview_flutter: ^2.0.8
   flutter_typeahead: ^2.0.0
   infinite_scroll_pagination: ^3.0.1+1
+  shimmer: ^2.0.0
 
 
   # The following adds the Cupertino Icons font to your application.

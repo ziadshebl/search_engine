@@ -9,12 +9,16 @@ class ResultsViewModel with ChangeNotifier {
   Status status = Status.success;
   List<Website> websites = [];
   String word = '';
+  int pageKey = 0;
+  int pageSize = 6;
 
-  Future<List<Website>> searchWord(
-      String word, int pageKey, int pageSize) async {
+  Future<List<Website>> searchWord(String word, bool newSearch) async {
     try {
+      if (newSearch) {
+        websites.clear();
+        pageKey = 0;
+      }
       this.word = word;
-      websites.clear();
       status = Status.loading;
       notifyListeners();
       final results = await WebServices().searchWord(word, pageKey, pageSize);
@@ -26,6 +30,7 @@ class ResultsViewModel with ChangeNotifier {
       }
 
       status = Status.success;
+      pageKey++;
       notifyListeners();
       return websites;
     } catch (error) {

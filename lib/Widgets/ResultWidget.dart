@@ -7,6 +7,7 @@ import 'package:search_engine/Screens/WebViewScreen.dart';
 import 'package:html/parser.dart' show parse;
 import 'package:http/http.dart' as http;
 import 'package:html/dom.dart' hide Text;
+import 'package:shimmer/shimmer.dart';
 
 class ResultWidget extends StatefulWidget {
   final String url;
@@ -18,11 +19,15 @@ class ResultWidget extends StatefulWidget {
   _ResultWidgetState createState() => _ResultWidgetState();
 }
 
-class _ResultWidgetState extends State<ResultWidget> {
+class _ResultWidgetState extends State<ResultWidget>
+    with AutomaticKeepAliveClientMixin {
   Metadata metadata;
   bool isLoaded = false;
   String body;
   bool found = false;
+
+  @override
+  bool get wantKeepAlive => true;
 
   @override
   void initState() {
@@ -36,11 +41,11 @@ class _ResultWidgetState extends State<ResultWidget> {
       document.querySelectorAll('p').forEach((value) {
         if (!found &&
             value.innerHtml.toLowerCase().contains(widget.word.toLowerCase())) {
-          body = value.innerHtml;
+          body = value.text;
           found = true;
         }
-        debugPrint(value.innerHtml);
       });
+
       if (!found) {
         body = metadata.description;
       }
@@ -56,8 +61,37 @@ class _ResultWidgetState extends State<ResultWidget> {
   Widget build(BuildContext context) {
     final deviceSize = MediaQuery.of(context).size;
     return !isLoaded
-        ? Container(
-            child: Text(widget.url),
+        ? SizedBox(
+            height: 140.0,
+            child: Shimmer.fromColors(
+              baseColor: Colors.grey[300],
+              highlightColor: Colors.white,
+              child: Column(
+                mainAxisAlignment: MainAxisAlignment.start,
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Row(),
+                  Container(
+                    margin: EdgeInsets.fromLTRB(0, 0, 0, 5),
+                    height: 30,
+                    width: deviceSize.width * 0.3,
+                    color: Colors.grey[100],
+                  ),
+                  Container(
+                    margin: EdgeInsets.fromLTRB(0, 0, 0, 5),
+                    height: 30,
+                    width: deviceSize.width * 0.4,
+                    color: Colors.grey[100],
+                  ),
+                  Container(
+                    margin: EdgeInsets.fromLTRB(0, 0, 0, 5),
+                    height: 60,
+                    width: deviceSize.width * 0.9,
+                    color: Colors.white,
+                  ),
+                ],
+              ),
+            ),
           )
         : InkWell(
             onTap: () => Navigator.push(
@@ -72,30 +106,34 @@ class _ResultWidgetState extends State<ResultWidget> {
               child: Container(
                 margin: EdgeInsets.fromLTRB(10, 5, 5, 5),
                 width: deviceSize.width * 0.95,
+                height: 120,
                 child: Column(
                   mainAxisAlignment: MainAxisAlignment.start,
                   crossAxisAlignment: CrossAxisAlignment.start,
                   children: [
-                    Row(
-                      children: [
-                        metadata.image != null
-                            ? Image.network(
-                                metadata.image,
-                                height: 30,
-                              )
-                            : Container(),
-                        Container(
-                          margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
-                          width: deviceSize.width * 0.7,
-                          child: Text(
-                            widget.url,
-                            maxLines: 1,
-                            overflow: TextOverflow.clip,
-                            style:
-                                TextStyle(color: Colors.black87, fontSize: 14),
-                          ),
-                        )
-                      ],
+                    Container(
+                      width: deviceSize.width * 0.9,
+                      child: Row(
+                        children: [
+                          metadata.image != null
+                              ? Image.network(
+                                  metadata.image,
+                                  height: 30,
+                                )
+                              : Container(),
+                          Expanded(
+                            // margin: EdgeInsets.fromLTRB(5, 0, 0, 0),
+                            // width: deviceSize.width * 0.7,
+                            child: Text(
+                              widget.url,
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
+                              style: TextStyle(
+                                  color: Colors.black87, fontSize: 14),
+                            ),
+                          )
+                        ],
+                      ),
                     ),
                     metadata.title != null
                         ? Container(
@@ -113,9 +151,13 @@ class _ResultWidgetState extends State<ResultWidget> {
                           ),
                     metadata.description != null
                         ? Container(
+                            alignment: Alignment.topLeft,
                             width: deviceSize.width * 0.9,
                             child: Text(
                               body,
+                              maxLines: 3,
+                              textAlign: TextAlign.left,
+                              overflow: TextOverflow.ellipsis,
                               style:
                                   TextStyle(color: Colors.black, fontSize: 14),
                             ),
